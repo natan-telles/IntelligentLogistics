@@ -1,0 +1,8 @@
+[Aa]pp_Data/
+[Bb]in/
+[Oo]bj/
+*.db
+*.db-shm
+*.db-wal
+.vs/
+.vscode/
