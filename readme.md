@@ -1,53 +1,49 @@
 # 📦 Intelligent Logistics Gateway
 
-Um sistema de mensageria escalável para logística, focado em **alta disponibilidade** e **desacoplamento de serviços**.
+## 🧠 Case Study: Arquitetura e Decisões
 
-## 🛠️ Stack Técnica
-- **Linguagem:** C# (.NET 8)
-- **Mensageria:** Apache Kafka
-- **Persistência:** Entity Framework Core (SQLite)
-- **Ambiente:** Docker & Docker Compose
+### 📍 Situation (Situação)
+Em sistemas logísticos de alta demanda, o processamento direto no banco de dados durante o recebimento de pedidos pode causar lentidão (gargalos) e perda de dados em caso de instabilidade do servidor de persistência.
 
-## 🏗️ Arquitetura
-O sistema utiliza uma **Arquitetura Orientada a Eventos (EDA)**:
-1. **ILG.Api**: Recebe pedidos de carga via REST e produz eventos para o Kafka.
-2. **Kafka Broker**: Garante a retenção e durabilidade das mensagens.
-3. **ILG.Worker**: Consome os eventos de forma assíncrona e persiste no banco de dados, garantindo que a API não seja sobrecarregada.
+### 🎯 Task (Tarefa)
+Desenvolver um gateway capaz de receber milhares de pedidos simultâneos, garantindo que a API permaneça disponível (low latency) e que nenhum pedido seja perdido, mesmo que o banco de dados esteja offline temporariamente.
 
-## 🚀 Como Executar
-1. Suba a infraestrutura: `docker-compose up -d`
-2. Execute o Worker: `dotnet run --project ILG.Worker`
-3. Execute a API: `dotnet run --project ILG.Api`
-4. Acesse o Swagger em `http://localhost:5000/swagger`
+### 🛠️ Action (Ação)
+Implementei uma **Arquitetura Orientada a Eventos (EDA)** utilizando **.NET 8** e **Apache Kafka**. 
+- Desenvolvi uma **Web API (Producer)** para recepção rápida de dados.
+- Configurei um **Broker Kafka** via Docker para atuar como buffer de mensagens.
+- Construí um **Worker Service (Consumer)** para processar e persistir os dados de forma assíncrona usando **Entity Framework Core**.
 
-## 🏗️ Arquitetura do Sistema
+### 📊 Result (Resultado)
+- **Desacoplamento Total:** A API responde em milissegundos, independentemente da carga no banco de dados.
+- **Resiliência:** Se o Worker for interrompido, as mensagens permanecem seguras no Kafka e são processadas automaticamente assim que o serviço retorna (Backpressure handling).
+- **Escalabilidade:** O sistema está pronto para escalabilidade horizontal, permitindo múltiplos consumidores para o mesmo tópico.
 
-O fluxo de dados segue o padrão de Mensageria Assíncrona:
+### 🏗️ Engineering (Engenharia)
+- **Record Types:** Uso de imutabilidade para integridade dos dados.
+- **Dependency Injection:** Código desacoplado facilitando testes unitários.
+- **Containerização:** Ambiente 100% reproduzível via Docker Compose.
 
 ### 🏗️ Arquitetura do Sistema
 
 ```mermaid
-graph TD
-    A[📱 Swagger/Client] -->|HTTP POST| B(⚙️ .NET API - Producer)
-    B -->|Produce Message| C{📨 Kafka Broker}
-    C -->|Consume Event| D(🛠️ Worker Service - Consumer)
-    D -->|Persist Data| E[(🗄️ SQLite Database)]
-    
-    style C fill:#f96,stroke:#333,stroke-width:2px
+graph LR
+    A[📱 Swagger] --> B(⚙️ .NET API)
+    B -->|Produce| C{📨 Kafka}
+    C -->|Consume| D(🛠️ Worker)
+    D --> E[(🗄️ DB)]
+
+    style C fill:#f96,stroke:#333
     style E fill:#00758f,color:#fff
-    
+    style B fill:#512bd4,color:#fff
+    style D fill:#512bd4,color:#fff
+```
 
-
-Client (Swagger): Dispara uma requisição HTTP POST com o JSON da carga.
-ILG.Api (Producer): Valida a entrada e faz o Produce (envio) para o Kafka. Ela retorna 202 Accepted imediatamente, liberando o cliente.
-Kafka (Message Broker): Atua como o buffer de resiliência. Ele armazena a mensagem em disco no tópico order-received.
-ILG.Worker (Consumer): Escuta o tópico de forma reativa. Quando há uma mensagem, ele a "puxa" (Consume), processa e confirma a leitura (commit).
-
-
-📄 Como descrever isso no seu Currículo/LinkedIn?
-Use estes termos técnicos para valorizar o que você fez:
-
-"Desenvolvimento de Arquitetura Orientada a Eventos (EDA) utilizando Apache Kafka para processamento assíncrono."
-"Implementação de Background Services em .NET 8 para consumo resiliente de mensagens."
-"Orquestração de infraestrutura de mensageria utilizando Docker e Docker Compose."
-
+<details>
+  <summary><b>🛠️ Clique para ver Decisões de Engenharia e Stack</b></summary>
+  
+  - **.NET 8:** Performance e tipagem forte.
+  - **Kafka:** Resiliência e desacoplamento.
+  - **SQLite:** Persistência leve e portátil.
+  - **Clean Arch:** Separação entre Domínio e Infra.
+</details>
